@@ -62,18 +62,24 @@ def run_module(module_name, inputs, user_inputs=None):
         print(f"⏱️ [module_runner] 總執行時間: {format_duration(total_duration)}")
         print(f"📤 [module_runner] 輸出結果: {result}")
         
-        # ✅ 在結果中加入時間統計資訊
-        enhanced_result = {
-            "result": result,
-            "timing": {
-                "start_time": start_datetime.isoformat(),
-                "end_time": end_datetime.isoformat(),
-                "config_duration": config_duration,
-                "execution_duration": execution_duration,
-                "total_duration": total_duration,
-                "module_name": module_name
+        # ✅ 在結果中加入時間統計資訊，但保持答案格式簡潔
+        # 如果 result 已經包含答案，直接回傳答案部分
+        if isinstance(result, dict) and any(key.startswith('answer') for key in result.keys()):
+            # 直接的答案格式：{'answer1': 198, 'answer2': 104, ...}
+            enhanced_result = result
+        else:
+            # 複雜格式或其他格式，保持原樣
+            enhanced_result = {
+                "result": result,
+                "timing": {
+                    "start_time": start_datetime.isoformat(),
+                    "end_time": end_datetime.isoformat(),
+                    "config_duration": config_duration,
+                    "execution_duration": execution_duration,
+                    "total_duration": total_duration,
+                    "module_name": module_name
+                }
             }
-        }
         
         return enhanced_result
         

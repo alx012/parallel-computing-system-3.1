@@ -118,3 +118,29 @@ Socket vs Flask API vs gRPC 傳輸方式比較
 	•	未來正式部署多機並追求效能 → 考慮升級 gRPC + Protobuf
 
 	
+⸻⸻⸻⸻
+單機模擬多機測試,真正多機部署時，只需要修改：
+# 目前 (單機模擬)
+worker_pool = {
+    "worker1": "http://localhost:5001",
+    "worker2": "http://localhost:5002",
+    "worker3": "http://localhost:5003",
+}
+
+# 未來 (真正多機)
+worker_pool = {
+    "worker1": "http://192.168.1.101:5001",
+    "worker2": "http://192.168.1.102:5001", 
+    "worker3": "http://192.168.1.103:5001",
+}
+
+⸻⸻⸻⸻
+通訊模式修改指令
+
+請將通訊模式從「master → worker → 資料庫 → master」改成「master → worker → 直接回傳 → master」，
+具體需要：
+1. 在 worker.py 中實作 HTTP 服務器接收任務
+2. 修改 transport_utils.py 中的 receive_result() 改成直接等待 HTTP 回應
+3. 取消透過資料庫傳遞結果的機制
+
+⸻⸻⸻⸻
