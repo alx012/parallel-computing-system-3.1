@@ -61,11 +61,15 @@ def get_ready_modules(execution_order, completed_modules, answer_map, modules_co
 
 def execute_module_task(module, inputs, user_inputs, worker_pool, idx):
     """執行單一模組任務的函數（用於平行執行）"""
+    print(f"\n=== 🟡 執行模組 {module} ===")
     start_time = time.time()
     
     try:
         worker = get_available_worker(worker_pool, idx)
         exec_id = str(uuid.uuid4())
+        
+        print(f"🕐 模組開始時間：{datetime.now().strftime('%H:%M:%S')}")
+        print(f"📋 準備的輸入資料：{inputs}")
         
         task_packet = {
             "module_name": module,
@@ -74,19 +78,20 @@ def execute_module_task(module, inputs, user_inputs, worker_pool, idx):
             "user_inputs": user_inputs
         }
 
-        print(f"📤 [並行] 發送 {module} 到 {worker}")
+        print(f"📤 發送 {module} 到 {worker}")
         send_response = send_task_to_worker(worker, task_packet)
 
         if send_response is None:
             raise Exception(f"無法傳送模組 {module}")
 
-        print(f"⏳ [並行] 等待模組 {module} 執行結果...")
+        print(f"⏳ 等待模組 {module} 執行結果...")
         result = receive_result(module)
         
         register_result_location(module, result, worker)
         
         duration = time.time() - start_time
-        print(f"✅ [並行] 模組 {module} 完成，耗時 {format_duration(duration)}")
+        print(f"✅ 模組 {module} 完成，結果為：{result}")
+        print(f"⏱️ {module} 執行時間：{format_duration(duration)}")
         
         return {
             "module": module,
@@ -97,7 +102,8 @@ def execute_module_task(module, inputs, user_inputs, worker_pool, idx):
         
     except Exception as e:
         duration = time.time() - start_time
-        print(f"❌ [並行] 模組 {module} 失敗，耗時 {format_duration(duration)}：{e}")
+        print(f"❌ 模組 {module} 執行失敗或超時：{e}")
+        print(f"⏱️ {module} 執行時間（失敗）：{format_duration(duration)}")
         return {
             "module": module,
             "result": None,
@@ -292,10 +298,12 @@ def main(user_inputs):
                                 print(f"⚠️ [DEBUG] 無法解析結果結構：{module_result}")
                         
                         print(f"✅ 模組 {module} 已加入完成清單")
-                        print(f"📊 更新後的 answer_map：{answer_map}")
+                        print(f"📊 當前 answer_map：{answer_map}")
                         
                         if module == "module5":
                             print(f"🔥 分散式計算統計：{result.get('subtasks_count')} 個子任務，{result.get('parallel_workers')} 個並行 worker")
+                        
+                        print("")  # 空行分隔
                     else:
                         timing_stats[module] = result["duration"]
                         print(f"❌ 模組 {module} 執行失敗：{result.get('error')}")
